@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>TerraGlobe — GeoSR Inference Dock</title>
+
+    <!-- Cesium -->
+    <link
+        href="https://cesium.com/downloads/cesiumjs/releases/1.134/Build/Cesium/Widgets/widgets.css"
+        rel="stylesheet"
+    >
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.134/Build/Cesium/Cesium.js"></script>
+
+    <!-- Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <!-- Real 3D globe -->
+    <div id="cesiumContainer"></div>
+
+    <div class="vignette"></div>
+
+    <!-- Top navigation -->
+    <header class="topbar">
+
+        <div class="brand">
+            <div class="brand-icon">◎</div>
+
+            <div>
+                <div class="brand-name">
+                    TerraGlobe
+                    <span>SIH 2026</span>
+                </div>
+
+                <small>
+                    Copernicus Sentinel-2 · GeoAI Pipeline
+                </small>
+            </div>
+        </div>
+
+        <nav>
+            <button id="navExplore">
+                Explore<br>3D
+            </button>
+
+            <button id="navSR" class="active">
+                SR<br>Pipeline
+            </button>
+
+            <button>User<br>Data</button>
+            <button>Constellations</button>
+            <button>Docs</button>
+        </nav>
+
+        <div class="actions">
+
+            <label class="search">
+                ⌕
+                <input
+                    id="search"
+                    placeholder="Search location"
+                    autocomplete="off"
+                >
+            </label>
+
+            <button class="lock" id="lock">
+                ◉ Lock<br>Target
+            </button>
+
+            <button class="deploy" id="deploy">
+                ⚡ Deploy AI Inference
+            </button>
+
+            <div class="avatar">AS</div>
+
+            <div class="scientist">
+                <b>Dr. A. Sharma</b>
+                <small>Lead EO Scientist</small>
+            </div>
+
+        </div>
+    </header>
+
+
+    <!-- GeoSR dock -->
+    <aside class="dock glass">
+
+        <div class="dockhead">
+
+            <div class="dockicon">⊞</div>
+
+            <div>
+                <h2>GeoSR™ Inference Dock</h2>
+                <p>Diffusion Model v4.2 · ESA Level-2A</p>
+            </div>
+
+            <div class="status">
+                ● ACTIVE<br>TILE
+            </div>
+
+        </div>
+
+        <hr>
+
+        <div class="compare">
+            <span>
+                RAW 10m <b>(Sentinel-2)</b>
+            </span>
+
+            <strong>
+                1.25m AI SuperRes
+            </strong>
+        </div>
+
+        <div class="preview">
+
+            <img
+                src="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/8/115/172"
+                alt="Satellite preview"
+            >
+
+            <i></i>
+
+            <label>10m / Multi-Spectral</label>
+            <label>1.25m 8x</label>
+
+        </div>
+
+        <div class="row">
+            <span>Target Ground Resolution</span>
+            <b>
+                1.25m <em>(Sub-meter Est.)</em>
+            </b>
+        </div>
+
+        <div class="res">
+            <button>10m</button>
+            <button>5.0m</button>
+            <button>2.5m</button>
+            <button class="selected">1.25m</button>
+        </div>
+
+        <label class="field">
+            Super-Resolution Foundation Model
+        </label>
+
+        <select>
+            <option>
+                GeoSR Diffusion v4 (Trained on Sentinel-2 + NAIP)
+            </option>
+            <option>Swin2SR Baseline</option>
+            <option>ESRGAN Benchmark</option>
+        </select>
+
+        <div class="metricsbox">
+
+            <div class="metricstitle">
+                REAL-TIME VALIDATION METRICS
+            </div>
+
+            <div class="metrics">
+
+                <div>
+                    <small>SSIM Index</small>
+                    <b>● 0.941</b>
+                </div>
+
+                <div>
+                    <small>PSNR Value</small>
+                    <b>● 38.4 dB</b>
+                </div>
+
+                <div>
+                    <small>Confidence</small>
+                    <b>● 96.8%</b>
+                </div>
+
+            </div>
+
+        </div>
+
+        <button class="inspect" id="inspect">
+            ⌾ Inspect 8x Super-Resolution Area
+        </button>
+
+        <div class="exports">
+            <button id="tiff">⇩ GeoTIFF (32-bit)</button>
+            <button id="geojson">▱ GeoJSON Mask</button>
+        </div>
+
+        <div class="progress" id="progress">
+
+            <div>
+                <span>AI inference</span>
+                <b id="pct">0%</b>
+            </div>
+
+            <i>
+                <em id="bar"></em>
+            </i>
+
+        </div>
+
+    </aside>
+
+
+    <!-- Satellite status -->
+    <div class="sat glass">
+
+        <i></i>
+
+        <b>
+            SENTINEL-2B / ALT
+            <br>
+            <small>786 KM</small>
+        </b>
+
+        <span>
+            7.42<br>km/s
+        </span>
+
+    </div>
+
+
+    <!-- Active target -->
+    <div class="target glass">
+
+        <div>◎</div>
+
+        <section>
+
+            <b>ACTIVE LOCATION</b>
+
+            <strong id="targetCoordinates">
+                28.6139° N · 77.2090° E
+            </strong>
+
+            <p>
+                Selected Area
+                <span id="targetMode">
+                    Explore 3D
+                </span>
+            </p>
+
+            <p>
+                GSD
+                <span>1.25m READY</span>
+            </p>
+
+        </section>
+
+    </div>
+
+
+    <!-- Globe controls -->
+    <div class="controls">
+
+        <button
+            id="home"
+            data-tooltip="Home — cinematic rotating Earth"
+        >
+            ⌂
+        </button>
+
+        <button
+            id="three"
+            data-tooltip="Explore 3D — interactive Earth"
+        >
+            3D
+        </button>
+
+        <div>
+            <button
+                id="plus"
+                data-tooltip="Zoom in"
+            >
+                +
+            </button>
+
+            <button
+                id="minus"
+                data-tooltip="Zoom out"
+            >
+                −
+            </button>
+        </div>
+
+        <button
+            id="reset"
+            data-tooltip="Reset camera"
+        >
+            ↔
+        </button>
+
+        <button
+            id="pin"
+            data-tooltip="Pin Location — click the Earth"
+        >
+            📍
+        </button>
+
+        <button
+            id="locate"
+            data-tooltip="Center on active location"
+        >
+            ♙
+        </button>
+
+        <button
+            id="full"
+            data-tooltip="Toggle fullscreen"
+        >
+            ⛶
+        </button>
+
+    </div>
+
+
+    <!-- Explore telemetry -->
+    <div class="explore-panel glass" id="explorePanel">
+
+        <div class="explore-title">
+            <span class="live-dot"></span>
+            PLANETARY TELEMETRY
+            <small id="exploreState">CINEMATIC</small>
+        </div>
+
+        <div class="telemetry-grid">
+
+            <div>
+                <span>LATITUDE</span>
+                <b id="telemetryLat">--</b>
+            </div>
+
+            <div>
+                <span>LONGITUDE</span>
+                <b id="telemetryLon">--</b>
+            </div>
+
+            <div>
+                <span>EYE ALTITUDE</span>
+                <b id="telemetryAlt">--</b>
+            </div>
+
+            <div>
+                <span>GROUND DISTANCE</span>
+                <b id="telemetryDistance">--</b>
+            </div>
+
+            <div>
+                <span>HEADING</span>
+                <b id="telemetryHeading">--</b>
+            </div>
+
+            <div>
+                <span>PITCH</span>
+                <b id="telemetryPitch">--</b>
+            </div>
+
+        </div>
+
+        <div class="coordinate-system">
+            WGS 84 · LIVE CAMERA TELEMETRY
+        </div>
+
+    </div>
+
+
+    <!-- Bottom telemetry -->
+    <div class="telemetry t1">
+        ●
+        <b>Copernicus Sentinel-2 MSI</b>
+        |
+        Pass:
+        <b>22 OCT 2026</b>
+        |
+        Cloud:
+        <b>0.1%</b>
+        |
+        <span>L2A Bottom-Of-Atmosphere</span>
+    </div>
+
+    <div class="telemetry t2" id="bottomTelemetry">
+        LAT/LON:
+        <b id="bottomLatLon">28.6139° N 77.2090° E</b>
+        |
+        ELEV:
+        <b id="groundElevation">216m MSL</b>
+        |
+        EYE ALT:
+        <b id="alt">--</b>
+        |
+        DIST:
+        <b id="bottomDistance">--</b>
+    </div>
+
+    <div class="scale" id="scaleBar">
+        ━━ 50 km
+        ESA · NASA · SIH AI
+    </div>
+
+
+    <!-- Inspection modal -->
+    <div class="modal hidden" id="modal">
+
+        <div class="modalcard glass">
+
+            <button id="close">×</button>
+
+            <small>
+                GEOSR INSPECTOR · ACTIVE LOCATION
+            </small>
+
+            <h2>
+                8× Super-Resolution Analysis
+            </h2>
+
+            <div class="before">
+
+                <div>
+                    <label>10m SENTINEL-2 INPUT</label>
+
+                    <img
+                        src="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/10/461/691"
+                        alt="Sentinel input"
+                    >
+                </div>
+
+                <div>
+                    <label>1.25m AI ENHANCED ESTIMATE</label>
+
+                    <img
+                        src="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/11/922/1382"
+                        alt="AI enhanced estimate"
+                    >
+                </div>
+
+            </div>
+
+            <div class="warning">
+
+                <b>⚠ AI-reconstructed detail</b>
+
+                Fine-scale structures are model-inferred and are not
+                directly observed by Sentinel-2. Validate against
+                high-resolution reference data before scientific use.
+
+            </div>
+
+            <div class="modalmetrics">
+
+                <b>SSIM<br>0.941</b>
+                <b>PSNR<br>38.4 dB</b>
+                <b>RMSE<br>0.021</b>
+                <b>Confidence<br>96.8%</b>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <script src="js/globe.js"></script>
+    <script src="js/main.js"></script>
+
+</body>
+</html>
