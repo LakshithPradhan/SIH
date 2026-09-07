@@ -1,10 +1,6 @@
 // ============================================================
 // TERRAGLOBE - MAIN APPLICATION
 // ============================================================
-//
-// This file controls the UI.
-// globe.js controls the actual Cesium Earth.
-// ============================================================
 
 const $ = (selector) =>
     document.querySelector(selector);
@@ -15,9 +11,13 @@ const $ = (selector) =>
 // ============================================================
 
 window.terraTarget = {
+
     name: "New Delhi",
+
     lat: 28.6139,
+
     lon: 77.2090
+
 };
 
 
@@ -38,6 +38,10 @@ const threeButton =
     document.getElementById("three");
 
 
+// ============================================================
+// EXPLORE NAVIGATION
+// ============================================================
+
 if (navExplore) {
 
     navExplore.onclick =
@@ -54,8 +58,13 @@ if (navExplore) {
             );
 
         };
+
 }
 
+
+// ============================================================
+// SR / HOME NAVIGATION
+// ============================================================
 
 if (navSR) {
 
@@ -73,8 +82,13 @@ if (navSR) {
             );
 
         };
+
 }
 
+
+// ============================================================
+// 3D BUTTON
+// ============================================================
 
 if (threeButton) {
 
@@ -88,8 +102,13 @@ if (threeButton) {
             );
 
         };
+
 }
 
+
+// ============================================================
+// HOME BUTTON
+// ============================================================
 
 if (homeButton) {
 
@@ -105,21 +124,39 @@ if (homeButton) {
 
             }
 
+
+            document.body.classList.remove(
+                "explore-mode"
+            );
+
+
+            document.body.classList.add(
+                "cinematic-mode"
+            );
+
+
             setActiveControl(
                 this
             );
 
+
             navExplore?.classList.remove(
                 "active"
             );
+
 
             navSR?.classList.add(
                 "active"
             );
 
         };
+
 }
 
+
+// ============================================================
+// ENTER EXPLORE
+// ============================================================
 
 function enterExplore() {
 
@@ -132,19 +169,32 @@ function enterExplore() {
 
     }
 
+
     document.body.classList.add(
         "explore-mode"
     );
+
+
+    document.body.classList.remove(
+        "cinematic-mode"
+    );
+
 
     navExplore?.classList.add(
         "active"
     );
 
+
     navSR?.classList.remove(
         "active"
     );
+
 }
 
+
+// ============================================================
+// EXIT EXPLORE
+// ============================================================
 
 function exitExplore() {
 
@@ -157,22 +207,31 @@ function exitExplore() {
 
     }
 
+
     document.body.classList.remove(
         "explore-mode"
     );
+
+
+    document.body.classList.add(
+        "cinematic-mode"
+    );
+
 
     navExplore?.classList.remove(
         "active"
     );
 
+
     navSR?.classList.add(
         "active"
     );
+
 }
 
 
 // ============================================================
-// ZOOM CONTROLS
+// ZOOM IN
 // ============================================================
 
 $("#plus")?.addEventListener(
@@ -186,15 +245,26 @@ $("#plus")?.addEventListener(
             return;
         }
 
+
         enterExplore();
 
+
         window.terraGlobe.viewer.camera.zoomIn(
-            250000
+            300000
+        );
+
+
+        setActiveControl(
+            this
         );
 
     }
 );
 
+
+// ============================================================
+// ZOOM OUT
+// ============================================================
 
 $("#minus")?.addEventListener(
     "click",
@@ -207,10 +277,17 @@ $("#minus")?.addEventListener(
             return;
         }
 
+
         enterExplore();
 
+
         window.terraGlobe.viewer.camera.zoomOut(
-            250000
+            300000
+        );
+
+
+        setActiveControl(
+            this
         );
 
     }
@@ -233,6 +310,7 @@ $("#reset")?.addEventListener(
             window.terraGlobe.resetCamera();
 
         }
+
 
         setActiveControl(
             this
@@ -259,12 +337,17 @@ $("#pin")?.addEventListener(
 
         }
 
+
+        setActiveControl(
+            this
+        );
+
     }
 );
 
 
 // ============================================================
-// LOCATE ACTIVE TARGET
+// LOCATE TARGET
 // ============================================================
 
 $("#locate")?.addEventListener(
@@ -279,6 +362,7 @@ $("#locate")?.addEventListener(
             window.terraGlobe.locateTarget();
 
         }
+
 
         setActiveControl(
             this
@@ -337,14 +421,18 @@ $("#lock")?.addEventListener(
         targetLocked =
             !targetLocked;
 
+
         this.classList.toggle(
             "locked",
             targetLocked
         );
 
+
         this.innerHTML =
             targetLocked
+
                 ? "● Target<br>Locked"
+
                 : "◉ Lock<br>Target";
 
     }
@@ -388,6 +476,7 @@ window.updateTarget =
                 "targetCoordinates"
             );
 
+
         if (targetCoordinates) {
 
             targetCoordinates.textContent =
@@ -400,6 +489,7 @@ window.updateTarget =
             document.getElementById(
                 "targetMode"
             );
+
 
         if (targetMode) {
 
@@ -431,6 +521,7 @@ function updateDashboard(
             latitude >= 0 ? "N" : "S"
         }`;
 
+
     const lon =
         `${Math.abs(longitude).toFixed(4)}° ${
             longitude >= 0 ? "E" : "W"
@@ -441,6 +532,7 @@ function updateDashboard(
         document.getElementById(
             "bottomLatLon"
         );
+
 
     if (bottomLatLon) {
 
@@ -454,10 +546,6 @@ function updateDashboard(
 
 // ============================================================
 // SEARCH LOCATION
-// ============================================================
-//
-// Uses OpenStreetMap Nominatim for place search.
-// The result is then handled by Cesium's camera.
 // ============================================================
 
 const searchInput =
@@ -477,6 +565,7 @@ searchInput?.addEventListener(
 
         const query =
             this.value.trim();
+
 
         if (!query) {
             return;
@@ -501,7 +590,7 @@ searchInput?.addEventListener(
                     url,
                     {
                         headers: {
-                            Accept:
+                            "Accept":
                                 "application/json"
                         }
                     }
@@ -509,9 +598,11 @@ searchInput?.addEventListener(
 
 
             if (!response.ok) {
+
                 throw new Error(
                     "Search request failed"
                 );
+
             }
 
 
@@ -526,6 +617,7 @@ searchInput?.addEventListener(
                 );
 
                 return;
+
             }
 
 
@@ -537,6 +629,7 @@ searchInput?.addEventListener(
                 parseFloat(
                     location.lat
                 );
+
 
             const longitude =
                 parseFloat(
@@ -569,6 +662,7 @@ searchInput?.addEventListener(
             console.error(
                 error
             );
+
 
             alert(
                 "Location search unavailable."
@@ -709,6 +803,7 @@ $("#deploy")?.addEventListener(
         bar.style.width =
             "0%";
 
+
         percentage.textContent =
             "0%";
 
@@ -735,6 +830,7 @@ $("#deploy")?.addEventListener(
 
                     bar.style.width =
                         `${value}%`;
+
 
                     percentage.textContent =
                         `${value}%`;
@@ -837,12 +933,14 @@ $("#geojson")?.addEventListener(
             type:
                 "FeatureCollection",
 
+
             features: [
 
                 {
 
                     type:
                         "Feature",
+
 
                     properties: {
 
@@ -865,10 +963,12 @@ $("#geojson")?.addEventListener(
 
                     },
 
+
                     geometry: {
 
                         type:
                             "Polygon",
+
 
                         coordinates: [
 
@@ -943,6 +1043,7 @@ $("#geojson")?.addEventListener(
         link.href =
             url;
 
+
         link.download =
             "terraglobe-active-location.geojson";
 
@@ -953,6 +1054,7 @@ $("#geojson")?.addEventListener(
 
 
         link.click();
+
 
         link.remove();
 
@@ -974,8 +1076,8 @@ $("#tiff")?.addEventListener(
     function () {
 
         alert(
-            "GeoTIFF export requires your GeoSR FastAPI/Python backend. " +
-            "The selected latitude/longitude can be sent to the model here."
+            "GeoTIFF export requires the GeoSR inference backend. " +
+            "The selected location can be sent to your FastAPI/Python model here."
         );
 
     }
@@ -1013,7 +1115,7 @@ function setActiveControl(
 
 
 // ============================================================
-// TOOLTIP CONTENT
+// TOOLTIP SYSTEM
 // ============================================================
 
 const tooltips = {
@@ -1022,7 +1124,7 @@ const tooltips = {
         "Home — cinematic rotating Earth",
 
     three:
-        "Explore 3D — interactive Earth",
+        "3D Globe — interactive Earth",
 
     plus:
         "Zoom In — move closer",
@@ -1034,7 +1136,7 @@ const tooltips = {
         "Reset Camera — restore orientation",
 
     pin:
-        "Pin Location — then click anywhere on Earth",
+        "Pin Location — click anywhere on Earth",
 
     locate:
         "Locate Target — fly to selected location",

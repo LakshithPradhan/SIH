@@ -1,27 +1,5 @@
 // ============================================================
-// TERRAGLOBE - REAL 3D GLOBE ENGINE
-// ============================================================
-//
-// Modes:
-//
-// 1. CINEMATIC
-//    - Real 3D Earth
-//    - Fixed camera distance
-//    - Slow automatic rotation
-//    - No user zoom / rotate / tilt
-//
-// 2. EXPLORE 3D
-//    - Full Cesium interaction
-//    - Zoom
-//    - Rotate
-//    - Tilt
-//    - Search/fly-to
-//    - Pin locations
-//    - Live latitude / longitude / altitude / distance
-//
-// Google Photorealistic 3D Tiles:
-// Put your Google Maps Platform API key below if you have one.
-// The rest of the application works without it using ArcGIS imagery.
+// TERRAGLOBE - REALISTIC 3D EARTH ENGINE
 // ============================================================
 
 const GOOGLE_3D_TILES_API_KEY = "";
@@ -36,6 +14,7 @@ let pinEntity = null;
 let pinMode = false;
 let exploreMode = false;
 
+let cinematicRotation = null;
 let cinematicOrbitTimer = null;
 
 const DEFAULT_LOCATION = {
@@ -47,61 +26,77 @@ const INITIAL_CAMERA_HEIGHT = 14500000;
 
 
 // ============================================================
-// CREATE VIEWER
+// INITIALIZE
 // ============================================================
 
 async function initializeGlobe() {
 
-    const container = document.getElementById("cesiumContainer");
+    const container =
+        document.getElementById("cesiumContainer");
 
     if (!container) {
         console.error("Cesium container not found.");
         return;
     }
 
-   viewer = new Cesium.Viewer(container, {
+    viewer = new Cesium.Viewer(container, {
 
-    animation: false,
-    timeline: false,
-    baseLayerPicker: false,
-    geocoder: false,
-    homeButton: false,
-    sceneModePicker: false,
-    navigationHelpButton: false,
-    fullscreenButton: false,
-    infoBox: false,
-    selectionIndicator: false,
+        animation: false,
+        timeline: false,
+        baseLayerPicker: false,
+        geocoder: false,
+        homeButton: false,
+        sceneModePicker: false,
+        navigationHelpButton: false,
+        fullscreenButton: false,
+        infoBox: false,
+        selectionIndicator: false,
 
-    // Do not pass globe: true.
-    // Cesium creates the normal 3D Earth automatically.
-    baseLayer: false,
+        baseLayer: false,
 
-    creditContainer: document.createElement("div")
-});
+        creditContainer:
+            document.createElement("div")
+    });
 
 
     // ========================================================
-    // SCENE QUALITY
+    // REALISTIC EARTH
     // ========================================================
 
-    viewer.scene.globe.show = true;
+    const globe = viewer.scene.globe;
 
-    viewer.scene.globe.enableLighting = true;
+    globe.show = true;
 
-    viewer.scene.globe.maximumScreenSpaceError = 2;
+    // Natural sunlight / shadow
+    globe.enableLighting = true;
 
+    // Better terrain detail
+    globe.maximumScreenSpaceError = 1.5;
+
+    // Improve atmosphere
     viewer.scene.skyAtmosphere.show = true;
 
-    viewer.scene.fog.enabled = true;
+    viewer.scene.skyAtmosphere.hueShift = 0.0;
+    viewer.scene.skyAtmosphere.saturationShift = 0.05;
+    viewer.scene.skyAtmosphere.brightnessShift = 0.02;
 
-    viewer.scene.fog.density = 0.000015;
+    // Space fog
+    viewer.scene.fog.enabled = true;
+    viewer.scene.fog.density = 0.000012;
 
     viewer.scene.backgroundColor =
-        Cesium.Color.fromCssColorString("#02070d");
+        Cesium.Color.fromCssColorString("#01050a");
+
+    // Better lighting
+    viewer.scene.highDynamicRange = true;
+
+    // Prevent weird opposite-side brightness
+    globe.dynamicAtmosphereLighting = true;
+    globe.dynamicAtmosphereLightingFromSun = true;
 
 
     // ========================================================
-    // SATELLITE IMAGERY
+    // SATELLITE EARTH
     // ========================================================
 
     try {
@@ -127,15 +122,7 @@ async function initializeGlobe() {
 
 
     // ========================================================
-    // WORLD PLACES + COUNTRY LABELS
-    // ========================================================
-    //
-    // This is what the old globe was missing.
-    // It overlays country boundaries and place names over
-    // satellite imagery.
-    //
-    // ArcGIS documents this layer as a reference layer for
-    // imagery basemaps.
+    // COUNTRY + PLACE LABELS
     // ========================================================
 
     try {
@@ -163,18 +150,21 @@ async function initializeGlobe() {
 
 
     // ========================================================
-    // OPTIONAL GOOGLE PHOTOREALISTIC 3D TILES
+    // OPTIONAL GOOGLE PHOTOREALISTIC 3D
     // ========================================================
 
-    if (GOOGLE_3D_TILES_API_KEY.trim()) {
+    if (
+        GOOGLE_3D_TILES_API_KEY &&
+        GOOGLE_3D_TILES_API_KEY.trim()
+    ) {
 
         try {
 
             googleTileset =
                 await Cesium.createGooglePhotorealistic3DTileset(
                     {
-                        key: GOOGLE_3D_TILES_API_KEY,
-                        onlyUsingWithGoogleGeocoder: true
+                        key:
+                            GOOGLE_3D_TILES_API_KEY
                     }
                 );
 
@@ -182,14 +172,10 @@ async function initializeGlobe() {
                 googleTileset
             );
 
-            console.log(
-                "Google Photorealistic 3D Tiles loaded."
-            );
-
         } catch (error) {
 
             console.error(
-                "Google Photorealistic 3D Tiles failed:",
+                "Google 3D Tiles failed:",
                 error
             );
 
@@ -202,39 +188,18 @@ async function initializeGlobe() {
     // INITIAL CAMERA
     // ========================================================
 
-    viewer.camera.setView({
-
-        destination:
-            Cesium.Cartesian3.fromDegrees(
-                DEFAULT_LOCATION.longitude,
-                DEFAULT_LOCATION.latitude,
-                INITIAL_CAMERA_HEIGHT
-            ),
-
-        orientation: {
-
-            heading:
-                Cesium.Math.toRadians(0),
-
-            pitch:
-                Cesium.Math.toRadians(-90),
-
-            roll: 0
-
-        }
-
-    });
+    setSpaceCamera();
 
 
     // ========================================================
-    // START CINEMATIC MODE
+    // START CINEMATIC EARTH
     // ========================================================
 
-    setCinematicMode();
+    enterCinematicMode();
 
 
     // ========================================================
-    // CAMERA TELEMETRY
+    // TELEMETRY
     // ========================================================
 
     viewer.scene.postRender.addEventListener(
@@ -243,14 +208,13 @@ async function initializeGlobe() {
 
 
     // ========================================================
-    // EARTH CLICK HANDLER
+    // EARTH CLICK
     // ========================================================
 
     const handler =
         new Cesium.ScreenSpaceEventHandler(
             viewer.scene.canvas
         );
-
 
     handler.setInputAction(
         function (movement) {
@@ -272,22 +236,22 @@ async function initializeGlobe() {
     );
 
 
+    // ========================================================
+    // PUBLIC API
+    // ========================================================
+
     window.terraGlobe = {
 
         viewer,
 
         enterExploreMode,
-
         enterCinematicMode,
 
         pinLocation,
-
         clearPin,
 
         flyToLocation,
-
         resetCamera,
-
         locateTarget
 
     };
@@ -295,10 +259,40 @@ async function initializeGlobe() {
 
 
 // ============================================================
+// SPACE CAMERA
+// ============================================================
+
+function setSpaceCamera() {
+
+    viewer.camera.setView({
+
+        destination:
+            Cesium.Cartesian3.fromDegrees(
+                DEFAULT_LOCATION.longitude,
+                DEFAULT_LOCATION.latitude,
+                INITIAL_CAMERA_HEIGHT
+            ),
+
+        orientation: {
+
+            heading: 0,
+
+            pitch:
+                Cesium.Math.toRadians(-90),
+
+            roll: 0
+
+        }
+
+    });
+}
+
+
+// ============================================================
 // CINEMATIC MODE
 // ============================================================
 
-function setCinematicMode() {
+function enterCinematicMode() {
 
     if (!viewer) {
         return;
@@ -313,7 +307,6 @@ function setCinematicMode() {
         viewer.scene.screenSpaceCameraController;
 
     controller.enableInputs = false;
-
     controller.enableRotate = false;
     controller.enableZoom = false;
     controller.enableTilt = false;
@@ -321,124 +314,95 @@ function setCinematicMode() {
     controller.enableLook = false;
 
 
-    viewer.camera.setView({
-
-        destination:
-            Cesium.Cartesian3.fromDegrees(
-                DEFAULT_LOCATION.longitude,
-                DEFAULT_LOCATION.latitude,
-                INITIAL_CAMERA_HEIGHT
-            ),
-
-        orientation: {
-
-            heading:
-                Cesium.Math.toRadians(0),
-
-            pitch:
-                Cesium.Math.toRadians(-90),
-
-            roll: 0
-
-        }
-
-    });
-
-
-    startCinematicRotation();
-
-    setExploreState("CINEMATIC");
-
     document.body.classList.remove(
-        "explore-mode"
+        "explore-mode",
+        "pin-mode"
     );
 
     document.body.classList.add(
         "cinematic-mode"
     );
+
+
+    setExploreState(
+        "CINEMATIC EARTH"
+    );
+
+
+    setSpaceCamera();
+
+    startCinematicRotation();
 }
 
 
 // ============================================================
-// CINEMATIC ROTATION
-// ============================================================
-//
-// The camera slowly orbits around the Earth.
-// The distance is kept essentially constant, so the user
-// sees a space-style rotating planet rather than a map zoom.
+// REAL EARTH ROTATION
 // ============================================================
 
 function startCinematicRotation() {
 
     stopCinematicRotation();
 
-    let angle = 0;
+    let longitude = DEFAULT_LOCATION.longitude;
 
-    const orbitCenter =
-        Cesium.Cartesian3.fromDegrees(
-            DEFAULT_LOCATION.longitude,
-            DEFAULT_LOCATION.latitude,
-            0
-        );
+    cinematicOrbitTimer = setInterval(
+        function () {
 
-    cinematicOrbitTimer =
-        window.setInterval(
-            function () {
+            if (!viewer || exploreMode) {
+                return;
+            }
 
-                if (!viewer || exploreMode) {
-                    return;
+            longitude += 0.025;
+
+            if (longitude > 180) {
+                longitude -= 360;
+            }
+
+            viewer.camera.setView({
+
+                destination:
+                    Cesium.Cartesian3.fromDegrees(
+                        longitude,
+                        DEFAULT_LOCATION.latitude,
+                        INITIAL_CAMERA_HEIGHT
+                    ),
+
+                orientation: {
+
+                    heading:
+                        Cesium.Math.toRadians(0),
+
+                    pitch:
+                        Cesium.Math.toRadians(-90),
+
+                    roll: 0
+
                 }
 
-                angle += 0.00055;
+            });
 
-                const longitude =
-                    DEFAULT_LOCATION.longitude +
-                    Cesium.Math.toDegrees(angle);
-
-                viewer.camera.setView({
-
-                    destination:
-                        Cesium.Cartesian3.fromDegrees(
-                            longitude,
-                            DEFAULT_LOCATION.latitude,
-                            INITIAL_CAMERA_HEIGHT
-                        ),
-
-                    orientation: {
-
-                        heading:
-                            Cesium.Math.toRadians(0),
-
-                        pitch:
-                            Cesium.Math.toRadians(-90),
-
-                        roll: 0
-
-                    }
-
-                });
-
-            },
-            40
-        );
+        },
+        40
+    );
 }
 
+
+// ============================================================
+// STOP ROTATION
+// ============================================================
 
 function stopCinematicRotation() {
 
     if (cinematicOrbitTimer !== null) {
 
-        clearInterval(
-            cinematicOrbitTimer
-        );
+        clearInterval(cinematicOrbitTimer);
 
         cinematicOrbitTimer = null;
     }
 }
 
-
 // ============================================================
-// EXPLORE 3D MODE
+// EXPLORE 3D
 // ============================================================
 
 function enterExploreMode() {
@@ -455,7 +419,6 @@ function enterExploreMode() {
         viewer.scene.screenSpaceCameraController;
 
     controller.enableInputs = true;
-
     controller.enableRotate = true;
     controller.enableZoom = true;
     controller.enableTilt = true;
@@ -468,7 +431,6 @@ function enterExploreMode() {
 
     controller.enableCollisionDetection = true;
 
-    setExploreState("INTERACTIVE");
 
     document.body.classList.remove(
         "cinematic-mode"
@@ -477,11 +439,16 @@ function enterExploreMode() {
     document.body.classList.add(
         "explore-mode"
     );
+
+
+    setExploreState(
+        "INTERACTIVE 3D EARTH"
+    );
 }
 
 
 // ============================================================
-// PIN LOCATION MODE
+// PIN LOCATION
 // ============================================================
 
 function pinLocation() {
@@ -498,6 +465,7 @@ function pinLocation() {
         "pin-mode"
     );
 
+
     const pinButton =
         document.getElementById("pin");
 
@@ -505,11 +473,16 @@ function pinLocation() {
         pinButton.classList.add("active");
     }
 
+
     setExploreState(
         "PIN MODE — CLICK EARTH"
     );
 }
 
+
+// ============================================================
+// GET EARTH POSITION
+// ============================================================
 
 function placePinFromScreenPosition(
     screenPosition
@@ -522,7 +495,7 @@ function placePinFromScreenPosition(
     let cartesian = null;
 
 
-    // First try actual 3D scene geometry.
+    // Try 3D position first
     if (
         viewer.scene.pickPositionSupported
     ) {
@@ -535,7 +508,7 @@ function placePinFromScreenPosition(
     }
 
 
-    // Fallback to the globe ellipsoid.
+    // Globe fallback
     if (
         !Cesium.defined(cartesian)
     ) {
@@ -561,7 +534,6 @@ function placePinFromScreenPosition(
     if (
         !Cesium.defined(cartesian)
     ) {
-
         return;
     }
 
@@ -570,6 +542,7 @@ function placePinFromScreenPosition(
         Cesium.Cartographic.fromCartesian(
             cartesian
         );
+
 
     const latitude =
         Cesium.Math.toDegrees(
@@ -595,11 +568,18 @@ function placePinFromScreenPosition(
     );
 
 
-    window.updateTarget(
-        latitude,
-        longitude,
-        "Pinned Location"
-    );
+    if (
+        typeof window.updateTarget ===
+        "function"
+    ) {
+
+        window.updateTarget(
+            latitude,
+            longitude,
+            "Pinned Location"
+        );
+
+    }
 
 
     pinMode = false;
@@ -607,6 +587,7 @@ function placePinFromScreenPosition(
     document.body.classList.remove(
         "pin-mode"
     );
+
 
     const pinButton =
         document.getElementById("pin");
@@ -617,6 +598,7 @@ function placePinFromScreenPosition(
         );
     }
 
+
     setExploreState(
         "PINNED LOCATION"
     );
@@ -624,7 +606,7 @@ function placePinFromScreenPosition(
 
 
 // ============================================================
-// CREATE / MOVE PIN
+// CREATE PIN
 // ============================================================
 
 function createOrMovePin(
@@ -633,14 +615,18 @@ function createOrMovePin(
     height = 0
 ) {
 
+    const position =
+        Cesium.Cartesian3.fromDegrees(
+            longitude,
+            latitude,
+            height
+        );
+
+
     if (pinEntity) {
 
         pinEntity.position =
-            Cesium.Cartesian3.fromDegrees(
-                longitude,
-                latitude,
-                height
-            );
+            position;
 
         return;
     }
@@ -649,18 +635,14 @@ function createOrMovePin(
     pinEntity =
         viewer.entities.add({
 
-            name: "TerraGlobe Pinned Location",
+            name:
+                "TerraGlobe Pinned Location",
 
-            position:
-                Cesium.Cartesian3.fromDegrees(
-                    longitude,
-                    latitude,
-                    height
-                ),
+            position,
 
             point: {
 
-                pixelSize: 13,
+                pixelSize: 14,
 
                 color:
                     Cesium.Color.fromCssColorString(
@@ -670,16 +652,14 @@ function createOrMovePin(
                 outlineColor:
                     Cesium.Color.WHITE,
 
-                outlineWidth: 2,
-
-                heightReference:
-                    Cesium.HeightReference.NONE
+                outlineWidth: 3
 
             },
 
             label: {
 
-                text: "PINNED LOCATION",
+                text:
+                    "PINNED LOCATION",
 
                 font:
                     "600 12px Space Grotesk, sans-serif",
@@ -693,7 +673,8 @@ function createOrMovePin(
                 outlineWidth: 4,
 
                 style:
-                    Cesium.LabelStyle.FILL_AND_OUTLINE,
+                    Cesium.LabelStyle
+                        .FILL_AND_OUTLINE,
 
                 verticalOrigin:
                     Cesium.VerticalOrigin.BOTTOM,
@@ -701,7 +682,7 @@ function createOrMovePin(
                 pixelOffset:
                     new Cesium.Cartesian2(
                         0,
-                        -18
+                        -20
                     )
 
             }
@@ -744,6 +725,7 @@ function flyToLocation(
 
     enterExploreMode();
 
+
     viewer.camera.flyTo({
 
         destination:
@@ -755,8 +737,7 @@ function flyToLocation(
 
         orientation: {
 
-            heading:
-                Cesium.Math.toRadians(0),
+            heading: 0,
 
             pitch:
                 Cesium.Math.toRadians(-65),
@@ -770,16 +751,23 @@ function flyToLocation(
     });
 
 
-    window.updateTarget(
-        latitude,
-        longitude,
-        "Search Result"
-    );
+    if (
+        typeof window.updateTarget ===
+        "function"
+    ) {
+
+        window.updateTarget(
+            latitude,
+            longitude,
+            "Search Result"
+        );
+
+    }
 }
 
 
 // ============================================================
-// RESET CAMERA
+// RESET
 // ============================================================
 
 function resetCamera() {
@@ -817,7 +805,7 @@ function resetCamera() {
 
 
 // ============================================================
-// LOCATE ACTIVE TARGET
+// LOCATE TARGET
 // ============================================================
 
 function locateTarget() {
@@ -827,9 +815,12 @@ function locateTarget() {
     }
 
     const target =
-        window.terraTarget || DEFAULT_LOCATION;
+        window.terraTarget ||
+        DEFAULT_LOCATION;
+
 
     enterExploreMode();
+
 
     viewer.camera.flyTo({
 
@@ -867,6 +858,7 @@ function updateCameraTelemetry() {
         return;
     }
 
+
     const camera =
         viewer.camera;
 
@@ -876,6 +868,7 @@ function updateCameraTelemetry() {
     if (!cartographic) {
         return;
     }
+
 
     const latitude =
         Cesium.Math.toDegrees(
@@ -897,10 +890,12 @@ function updateCameraTelemetry() {
     const earthRadius =
         Cesium.Ellipsoid.WGS84.maximumRadius;
 
+
     const distanceFromCenter =
         Cesium.Cartesian3.magnitude(
             camera.positionWC
         );
+
 
     const groundDistance =
         Math.max(
@@ -916,6 +911,7 @@ function updateCameraTelemetry() {
                 camera.heading
             )
         );
+
 
     const pitch =
         Cesium.Math.toDegrees(
@@ -953,7 +949,6 @@ function updateCameraTelemetry() {
         `${pitch.toFixed(1)}°`
     );
 
-
     updateText(
         "alt",
         formatDistance(altitude)
@@ -967,15 +962,12 @@ function updateCameraTelemetry() {
 
     if (exploreMode) {
 
-        // The camera's globe position is useful telemetry.
-        // The selected target remains separate.
         updateText(
             "bottomLatLon",
             `${formatLatitude(latitude)} ${formatLongitude(longitude)}`
         );
 
     }
-
 }
 
 
@@ -1057,7 +1049,7 @@ function setExploreState(
 
 
 // ============================================================
-// INITIALIZE
+// START
 // ============================================================
 
 document.addEventListener(
