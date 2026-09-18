@@ -1,103 +1,242 @@
-// ============================================================
-// TERRAGLOBE - REALISTIC 3D EARTH ENGINE
-// ============================================================
+/* ============================================================
+   TERRAGLOBE
+   CESIUM EARTH ENGINE
+   ============================================================ */
+
+"use strict";
+
+
+/* ============================================================
+   CONFIG
+   ============================================================ */
 
 const GOOGLE_3D_TILES_API_KEY = "";
+
+
+const DEFAULT_LOCATION = {
+
+    latitude:
+        28.6139,
+
+    longitude:
+        77.2090
+
+};
+
+
+const INITIAL_CAMERA_HEIGHT =
+    14500000;
+
+
+/* ============================================================
+   STATE
+   ============================================================ */
 
 let viewer = null;
 
 let worldImageryLayer = null;
+
 let placeLabelsLayer = null;
+
 let googleTileset = null;
 
 let pinEntity = null;
+
 let pinMode = false;
+
 let exploreMode = false;
 
 let cinematicRotation = null;
-let cinematicOrbitTimer = null;
-
-const DEFAULT_LOCATION = {
-    latitude: 28.6139,
-    longitude: 77.2090
-};
-
-const INITIAL_CAMERA_HEIGHT = 14500000;
 
 
-// ============================================================
-// INITIALIZE
-// ============================================================
+/* ============================================================
+   INITIALIZE
+   ============================================================ */
 
 async function initializeGlobe() {
 
     const container =
-        document.getElementById("cesiumContainer");
+        document.getElementById(
+            "cesiumContainer"
+        );
+
 
     if (!container) {
-        console.error("Cesium container not found.");
+
+        console.error(
+            "Cesium container not found."
+        );
+
         return;
+
     }
 
-    viewer = new Cesium.Viewer(container, {
 
-        animation: false,
-        timeline: false,
-        baseLayerPicker: false,
-        geocoder: false,
-        homeButton: false,
-        sceneModePicker: false,
-        navigationHelpButton: false,
-        fullscreenButton: false,
-        infoBox: false,
-        selectionIndicator: false,
+    viewer =
+        new Cesium.Viewer(
+            container,
+            {
 
-        baseLayer: false,
+                animation:
+                    false,
 
-        creditContainer:
-            document.createElement("div")
-    });
+                timeline:
+                    false,
+
+                baseLayerPicker:
+                    false,
+
+                geocoder:
+                    false,
+
+                homeButton:
+                    false,
+
+                sceneModePicker:
+                    false,
+
+                navigationHelpButton:
+                    false,
+
+                fullscreenButton:
+                    false,
+
+                infoBox:
+                    false,
+
+                selectionIndicator:
+                    false,
+
+                baseLayer:
+                    false,
+
+                creditContainer:
+                    document.createElement(
+                        "div"
+                    ),
+
+                contextOptions:
+                    {
+
+                        webgl:
+                            {
+
+                                preserveDrawingBuffer:
+                                    true
+
+                            }
+
+                    }
+
+            }
+        );
 
 
-    // ========================================================
-    // REALISTIC EARTH
-    // ========================================================
+    /* ========================================================
+       CORRECT EARTH SUNLIGHT
+       ======================================================== */
 
-    const globe = viewer.scene.globe;
+    /*
+     * Cesium calculates the Sun position from the clock.
+     *
+     * The selected time puts India/New Delhi on the
+     * daylight side.
+     *
+     * The opposite hemisphere is therefore naturally
+     * dark.
+     */
 
-    globe.show = true;
+    viewer.clock.currentTime =
+        Cesium.JulianDate.fromIso8601(
+            "2026-09-18T08:00:00Z"
+        );
 
-    // Natural sunlight / shadow
-    globe.enableLighting = true;
 
-    // Better terrain detail
-    globe.maximumScreenSpaceError = 1.5;
+    viewer.clock.shouldAnimate =
+        false;
 
-    // Improve atmosphere
-    viewer.scene.skyAtmosphere.show = true;
 
-    viewer.scene.skyAtmosphere.hueShift = 0.0;
-    viewer.scene.skyAtmosphere.saturationShift = 0.05;
-    viewer.scene.skyAtmosphere.brightnessShift = 0.02;
+    const globe =
+        viewer.scene.globe;
 
-    // Space fog
-    viewer.scene.fog.enabled = true;
-    viewer.scene.fog.density = 0.000012;
+
+    /*
+     * IMPORTANT:
+     *
+     * Do not fake day/night using CSS filters.
+     *
+     * Cesium's actual globe lighting is used.
+     */
+
+    globe.enableLighting =
+        true;
+
+
+    globe.dynamicAtmosphereLighting =
+        true;
+
+
+    globe.dynamicAtmosphereLightingFromSun =
+        true;
+
+
+    globe.showGroundAtmosphere =
+        true;
+
+
+    /*
+     * Use Cesium's actual Sun as the scene light.
+     */
+
+    viewer.scene.light =
+        new Cesium.SunLight();
+
+
+    /* ========================================================
+       EARTH QUALITY
+       ======================================================== */
+
+    globe.maximumScreenSpaceError =
+        1;
+
+
+    viewer.scene.skyAtmosphere.show =
+        true;
+
+
+    viewer.scene.skyAtmosphere.hueShift =
+        0;
+
+
+    viewer.scene.skyAtmosphere.saturationShift =
+        0.6;
+
+
+    viewer.scene.skyAtmosphere.brightnessShift =
+        0.05;
+
+
+    viewer.scene.fog.enabled =
+        true;
+
+
+    viewer.scene.fog.density =
+        0.000012;
+
 
     viewer.scene.backgroundColor =
-        Cesium.Color.fromCssColorString("#01050a");
-
-    // Better lighting
-    viewer.scene.highDynamicRange = true;
-
-    // Prevent weird opposite-side brightness
-    globe.dynamicAtmosphereLighting = true;
-    globe.dynamicAtmosphereLightingFromSun = true;
+        Cesium.Color.fromCssColorString(
+            "#01050a"
+        );
 
 
-    // ========================================================
-    // SATELLITE EARTH
-    // ========================================================
+    viewer.scene.highDynamicRange =
+        true;
+
+
+    /* ========================================================
+       SATELLITE IMAGERY
+       ======================================================== */
 
     try {
 
@@ -106,24 +245,26 @@ async function initializeGlobe() {
                 "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer"
             );
 
+
         worldImageryLayer =
             viewer.imageryLayers.addImageryProvider(
                 imageryProvider
             );
 
+
     } catch (error) {
 
         console.error(
-            "World imagery could not be loaded:",
+            "World imagery failed:",
             error
         );
 
     }
 
 
-    // ========================================================
-    // COUNTRY + PLACE LABELS
-    // ========================================================
+    /* ========================================================
+       COUNTRY / PLACE LABELS
+       ======================================================== */
 
     try {
 
@@ -132,26 +273,30 @@ async function initializeGlobe() {
                 "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer"
             );
 
+
         placeLabelsLayer =
             viewer.imageryLayers.addImageryProvider(
                 labelsProvider
             );
 
-        placeLabelsLayer.alpha = 0.95;
+
+        placeLabelsLayer.alpha =
+            0.95;
+
 
     } catch (error) {
 
         console.warn(
-            "Place labels could not be loaded:",
+            "Reference labels unavailable:",
             error
         );
 
     }
 
 
-    // ========================================================
-    // OPTIONAL GOOGLE PHOTOREALISTIC 3D
-    // ========================================================
+    /* ========================================================
+       OPTIONAL GOOGLE 3D TILES
+       ======================================================== */
 
     if (
         GOOGLE_3D_TILES_API_KEY &&
@@ -168,9 +313,11 @@ async function initializeGlobe() {
                     }
                 );
 
+
             viewer.scene.primitives.add(
                 googleTileset
             );
+
 
         } catch (error) {
 
@@ -184,48 +331,55 @@ async function initializeGlobe() {
     }
 
 
-    // ========================================================
-    // INITIAL CAMERA
-    // ========================================================
+    /* ========================================================
+       CAMERA
+       ======================================================== */
 
     setSpaceCamera();
 
 
-    // ========================================================
-    // START CINEMATIC EARTH
-    // ========================================================
+    /* ========================================================
+       CINEMATIC MODE
+       ======================================================== */
 
     enterCinematicMode();
 
 
-    // ========================================================
-    // TELEMETRY
-    // ========================================================
+    /* ========================================================
+       TELEMETRY
+       ======================================================== */
 
     viewer.scene.postRender.addEventListener(
         updateCameraTelemetry
     );
 
 
-    // ========================================================
-    // EARTH CLICK
-    // ========================================================
+    /* ========================================================
+       EARTH CLICK / PIN
+       ======================================================== */
 
     const handler =
         new Cesium.ScreenSpaceEventHandler(
             viewer.scene.canvas
         );
 
+
     handler.setInputAction(
         function (movement) {
 
             if (!exploreMode) {
+
                 return;
+
             }
 
+
             if (!pinMode) {
+
                 return;
+
             }
+
 
             placePinFromScreenPosition(
                 movement.position
@@ -236,88 +390,145 @@ async function initializeGlobe() {
     );
 
 
-    // ========================================================
-    // PUBLIC API
-    // ========================================================
+    /* ========================================================
+       PUBLIC API
+       ======================================================== */
 
     window.terraGlobe = {
 
         viewer,
 
         enterExploreMode,
+
         enterCinematicMode,
 
         pinLocation,
+
         clearPin,
 
         flyToLocation,
+
         resetCamera,
-        locateTarget
+
+        locateTarget,
+
+        captureCurrentView
 
     };
+
 }
 
 
-// ============================================================
-// SPACE CAMERA
-// ============================================================
+/* ============================================================
+   SPACE CAMERA
+   ============================================================ */
 
 function setSpaceCamera() {
 
-    viewer.camera.setView({
+    if (!viewer) {
 
-        destination:
-            Cesium.Cartesian3.fromDegrees(
-                DEFAULT_LOCATION.longitude,
-                DEFAULT_LOCATION.latitude,
-                INITIAL_CAMERA_HEIGHT
-            ),
+        return;
 
-        orientation: {
+    }
 
-            heading: 0,
 
-            pitch:
-                Cesium.Math.toRadians(-90),
+    viewer.camera.setView(
 
-            roll: 0
+        {
+
+            destination:
+                Cesium.Cartesian3.fromDegrees(
+
+                    DEFAULT_LOCATION.longitude,
+
+                    DEFAULT_LOCATION.latitude,
+
+                    INITIAL_CAMERA_HEIGHT
+
+                ),
+
+
+            orientation:
+                {
+
+                    heading:
+                        0,
+
+                    pitch:
+                        Cesium.Math.toRadians(
+                            -90
+                        ),
+
+                    roll:
+                        0
+
+                }
 
         }
 
-    });
+    );
+
 }
 
 
-// ============================================================
-// CINEMATIC MODE
-// ============================================================
+/* ============================================================
+   CINEMATIC MODE
+   ============================================================ */
 
 function enterCinematicMode() {
 
     if (!viewer) {
+
         return;
+
     }
 
-    exploreMode = false;
-    pinMode = false;
+
+    exploreMode =
+        false;
+
+
+    pinMode =
+        false;
+
 
     stopCinematicRotation();
 
-    const controller =
-        viewer.scene.screenSpaceCameraController;
 
-    controller.enableInputs = false;
-    controller.enableRotate = false;
-    controller.enableZoom = false;
-    controller.enableTilt = false;
-    controller.enableTranslate = false;
-    controller.enableLook = false;
+    const controller =
+        viewer.scene
+            .screenSpaceCameraController;
+
+
+    controller.enableInputs =
+        false;
+
+
+    controller.enableRotate =
+        false;
+
+
+    controller.enableZoom =
+        false;
+
+
+    controller.enableTilt =
+        false;
+
+
+    controller.enableTranslate =
+        false;
+
+
+    controller.enableLook =
+        false;
 
 
     document.body.classList.remove(
         "explore-mode",
         "pin-mode"
     );
+
 
     document.body.classList.add(
         "cinematic-mode"
@@ -331,110 +542,182 @@ function enterCinematicMode() {
 
     setSpaceCamera();
 
+
+    /*
+     * Give Cesium a frame after the camera
+     * is positioned before starting rotation.
+     */
+
+    viewer.scene.requestRender();
+
+
     startCinematicRotation();
+
 }
 
 
-// ============================================================
-// REAL EARTH ROTATION
-// ============================================================
+/* ============================================================
+   CINEMATIC ROTATION
+   ============================================================ */
 
 function startCinematicRotation() {
 
     stopCinematicRotation();
 
-    let longitude = DEFAULT_LOCATION.longitude;
 
-    cinematicOrbitTimer = setInterval(
+    let lastTime =
+        performance.now();
+
+
+    cinematicRotation =
         function () {
 
-            if (!viewer || exploreMode) {
+            if (
+                !viewer ||
+                exploreMode
+            ) {
+
                 return;
+
             }
 
-            longitude += 0.025;
 
-            if (longitude > 180) {
-                longitude -= 360;
-            }
+            const now =
+                performance.now();
 
-            viewer.camera.setView({
 
-                destination:
-                    Cesium.Cartesian3.fromDegrees(
-                        longitude,
-                        DEFAULT_LOCATION.latitude,
-                        INITIAL_CAMERA_HEIGHT
-                    ),
+            const delta =
+                Math.min(
+                    (now - lastTime) / 1000,
+                    0.1
+                );
 
-                orientation: {
 
-                    heading:
-                        Cesium.Math.toRadians(0),
+            lastTime =
+                now;
 
-                    pitch:
-                        Cesium.Math.toRadians(-90),
 
-                    roll: 0
+            /*
+             * Slow, continuous rotation.
+             *
+             * The camera moves around the Earth,
+             * while the Sun remains fixed.
+             *
+             * This means the daylight terminator
+             * remains physically consistent.
+             */
 
-                }
+            viewer.camera.rotateRight(
 
-            });
+                Cesium.Math.toRadians(
+                    0.45
+                ) * delta
 
-        },
-        40
+            );
+
+        };
+
+
+    viewer.scene.postRender.addEventListener(
+        cinematicRotation
     );
+
 }
 
 
-// ============================================================
-// STOP ROTATION
-// ============================================================
+/* ============================================================
+   STOP ROTATION
+   ============================================================ */
 
 function stopCinematicRotation() {
 
-    if (cinematicOrbitTimer !== null) {
+    if (
+        viewer &&
+        cinematicRotation
+    ) {
 
-        clearInterval(cinematicOrbitTimer);
+        viewer.scene.postRender.removeEventListener(
+            cinematicRotation
+        );
 
-        cinematicOrbitTimer = null;
     }
+
+
+    cinematicRotation =
+        null;
+
 }
 
-// ============================================================
-// EXPLORE 3D
-// ============================================================
+
+/* ============================================================
+   EXPLORE 3D
+   ============================================================ */
 
 function enterExploreMode() {
 
     if (!viewer) {
+
         return;
+
     }
 
-    exploreMode = true;
+
+    exploreMode =
+        true;
+
 
     stopCinematicRotation();
 
+
     const controller =
-        viewer.scene.screenSpaceCameraController;
+        viewer.scene
+            .screenSpaceCameraController;
 
-    controller.enableInputs = true;
-    controller.enableRotate = true;
-    controller.enableZoom = true;
-    controller.enableTilt = true;
-    controller.enableTranslate = true;
-    controller.enableLook = true;
 
-    controller.inertiaSpin = 0.88;
-    controller.inertiaTranslate = 0.85;
-    controller.inertiaZoom = 0.75;
+    controller.enableInputs =
+        true;
 
-    controller.enableCollisionDetection = true;
+
+    controller.enableRotate =
+        true;
+
+
+    controller.enableZoom =
+        true;
+
+
+    controller.enableTilt =
+        true;
+
+
+    controller.enableTranslate =
+        true;
+
+
+    controller.enableLook =
+        true;
+
+
+    controller.inertiaSpin =
+        0.88;
+
+
+    controller.inertiaTranslate =
+        0.85;
+
+
+    controller.inertiaZoom =
+        0.75;
+
+
+    controller.enableCollisionDetection =
+        true;
 
 
     document.body.classList.remove(
         "cinematic-mode"
     );
+
 
     document.body.classList.add(
         "explore-mode"
@@ -444,22 +727,32 @@ function enterExploreMode() {
     setExploreState(
         "INTERACTIVE 3D EARTH"
     );
+
+
+    viewer.scene.requestRender();
+
 }
 
 
-// ============================================================
-// PIN LOCATION
-// ============================================================
+/* ============================================================
+   PIN MODE
+   ============================================================ */
 
 function pinLocation() {
 
     if (!viewer) {
+
         return;
+
     }
+
 
     enterExploreMode();
 
-    pinMode = true;
+
+    pinMode =
+        true;
+
 
     document.body.classList.add(
         "pin-mode"
@@ -467,35 +760,46 @@ function pinLocation() {
 
 
     const pinButton =
-        document.getElementById("pin");
+        document.getElementById(
+            "pin"
+        );
 
-    if (pinButton) {
-        pinButton.classList.add("active");
-    }
+
+    pinButton?.classList.add(
+        "active"
+    );
 
 
     setExploreState(
-        "PIN MODE — CLICK EARTH"
+        "PIN MODE · CLICK EARTH"
     );
+
 }
 
 
-// ============================================================
-// GET EARTH POSITION
-// ============================================================
+/* ============================================================
+   PLACE PIN
+   ============================================================ */
 
 function placePinFromScreenPosition(
     screenPosition
 ) {
 
     if (!viewer) {
+
         return;
+
     }
 
-    let cartesian = null;
+
+    let cartesian =
+        null;
 
 
-    // Try 3D position first
+    /*
+     * Try 3D pick first.
+     */
+
     if (
         viewer.scene.pickPositionSupported
     ) {
@@ -508,15 +812,21 @@ function placePinFromScreenPosition(
     }
 
 
-    // Globe fallback
+    /*
+     * Fallback to globe intersection.
+     */
+
     if (
-        !Cesium.defined(cartesian)
+        !Cesium.defined(
+            cartesian
+        )
     ) {
 
         const ray =
             viewer.camera.getPickRay(
                 screenPosition
             );
+
 
         if (ray) {
 
@@ -532,9 +842,13 @@ function placePinFromScreenPosition(
 
 
     if (
-        !Cesium.defined(cartesian)
+        !Cesium.defined(
+            cartesian
+        )
     ) {
+
         return;
+
     }
 
 
@@ -549,10 +863,12 @@ function placePinFromScreenPosition(
             cartographic.latitude
         );
 
+
     const longitude =
         Cesium.Math.toDegrees(
             cartographic.longitude
         );
+
 
     const height =
         Math.max(
@@ -561,157 +877,137 @@ function placePinFromScreenPosition(
         );
 
 
-    createOrMovePin(
-        longitude,
-        latitude,
-        height
-    );
+    clearPin();
 
 
-    if (
-        typeof window.updateTarget ===
-        "function"
-    ) {
+    pinEntity =
+        viewer.entities.add({
 
-        window.updateTarget(
-            latitude,
-            longitude,
-            "Pinned Location"
-        );
+            position:
+                Cesium.Cartesian3.fromRadians(
 
-    }
+                    cartographic.longitude,
+
+                    cartographic.latitude,
+
+                    height + 100
+
+                ),
 
 
-    pinMode = false;
+            point:
+                {
+
+                    pixelSize:
+                        12,
+
+                    color:
+                        Cesium.Color.CYAN,
+
+                    outlineColor:
+                        Cesium.Color.WHITE,
+
+                    outlineWidth:
+                        2,
+
+                    disableDepthTestDistance:
+                        Number.POSITIVE_INFINITY
+
+                },
+
+
+            label:
+                {
+
+                    text:
+                        `${latitude.toFixed(4)}°, ${longitude.toFixed(4)}°`,
+
+                    font:
+                        "11px Space Grotesk",
+
+                    fillColor:
+                        Cesium.Color.WHITE,
+
+                    style:
+                        Cesium.LabelStyle.FILL_AND_OUTLINE,
+
+                    outlineColor:
+                        Cesium.Color.BLACK,
+
+                    outlineWidth:
+                        3,
+
+                    pixelOffset:
+                        new Cesium.Cartesian2(
+                            0,
+                            -22
+                        ),
+
+                    disableDepthTestDistance:
+                        Number.POSITIVE_INFINITY
+
+                }
+
+        });
+
+
+    pinMode =
+        false;
+
 
     document.body.classList.remove(
         "pin-mode"
     );
 
 
-    const pinButton =
-        document.getElementById("pin");
+    document.getElementById(
+        "pin"
+    )?.classList.remove(
+        "active"
+    );
 
-    if (pinButton) {
-        pinButton.classList.remove(
-            "active"
-        );
-    }
+
+    window.updateTarget?.(
+        latitude,
+        longitude,
+        "Pinned Location"
+    );
 
 
     setExploreState(
-        "PINNED LOCATION"
+        "LOCATION PINNED"
     );
+
 }
 
 
-// ============================================================
-// CREATE PIN
-// ============================================================
+/* ============================================================
+   CLEAR PIN
+   ============================================================ */
 
-function createOrMovePin(
-    longitude,
-    latitude,
-    height = 0
-) {
+function clearPin() {
 
-    const position =
-        Cesium.Cartesian3.fromDegrees(
-            longitude,
-            latitude,
-            height
+    if (
+        viewer &&
+        pinEntity
+    ) {
+
+        viewer.entities.remove(
+            pinEntity
         );
 
-
-    if (pinEntity) {
-
-        pinEntity.position =
-            position;
-
-        return;
     }
 
 
     pinEntity =
-        viewer.entities.add({
+        null;
 
-            name:
-                "TerraGlobe Pinned Location",
-
-            position,
-
-            point: {
-
-                pixelSize: 14,
-
-                color:
-                    Cesium.Color.fromCssColorString(
-                        "#00d2ff"
-                    ),
-
-                outlineColor:
-                    Cesium.Color.WHITE,
-
-                outlineWidth: 3
-
-            },
-
-            label: {
-
-                text:
-                    "PINNED LOCATION",
-
-                font:
-                    "600 12px Space Grotesk, sans-serif",
-
-                fillColor:
-                    Cesium.Color.WHITE,
-
-                outlineColor:
-                    Cesium.Color.BLACK,
-
-                outlineWidth: 4,
-
-                style:
-                    Cesium.LabelStyle
-                        .FILL_AND_OUTLINE,
-
-                verticalOrigin:
-                    Cesium.VerticalOrigin.BOTTOM,
-
-                pixelOffset:
-                    new Cesium.Cartesian2(
-                        0,
-                        -20
-                    )
-
-            }
-
-        });
 }
 
 
-// ============================================================
-// CLEAR PIN
-// ============================================================
-
-function clearPin() {
-
-    if (!viewer || !pinEntity) {
-        return;
-    }
-
-    viewer.entities.remove(
-        pinEntity
-    );
-
-    pinEntity = null;
-}
-
-
-// ============================================================
-// FLY TO LOCATION
-// ============================================================
+/* ============================================================
+   FLY TO LOCATION
+   ============================================================ */
 
 function flyToLocation(
     latitude,
@@ -720,8 +1016,11 @@ function flyToLocation(
 ) {
 
     if (!viewer) {
+
         return;
+
     }
+
 
     enterExploreMode();
 
@@ -730,143 +1029,140 @@ function flyToLocation(
 
         destination:
             Cesium.Cartesian3.fromDegrees(
+
                 longitude,
+
                 latitude,
+
                 height
+
             ),
 
-        orientation: {
 
-            heading: 0,
-
-            pitch:
-                Cesium.Math.toRadians(-65),
-
-            roll: 0
-
-        },
-
-        duration: 2.2
+        duration:
+            2.2
 
     });
 
-
-    if (
-        typeof window.updateTarget ===
-        "function"
-    ) {
-
-        window.updateTarget(
-            latitude,
-            longitude,
-            "Search Result"
-        );
-
-    }
 }
 
 
-// ============================================================
-// RESET
-// ============================================================
+/* ============================================================
+   RESET CAMERA
+   ============================================================ */
 
 function resetCamera() {
 
     if (!viewer) {
+
         return;
+
     }
 
+
+    clearPin();
+
+
     enterExploreMode();
+
 
     viewer.camera.flyTo({
 
         destination:
             Cesium.Cartesian3.fromDegrees(
+
                 DEFAULT_LOCATION.longitude,
+
                 DEFAULT_LOCATION.latitude,
-                1000000
+
+                5000000
+
             ),
 
-        orientation: {
 
-            heading: 0,
+        orientation:
+            {
 
-            pitch:
-                Cesium.Math.toRadians(-90),
+                heading:
+                    0,
 
-            roll: 0
+                pitch:
+                    Cesium.Math.toRadians(
+                        -90
+                    ),
 
-        },
+                roll:
+                    0
 
-        duration: 1.5
+            },
+
+
+        duration:
+            1.6
 
     });
+
+
+    setExploreState(
+        "INTERACTIVE 3D EARTH"
+    );
+
 }
 
 
-// ============================================================
-// LOCATE TARGET
-// ============================================================
+/* ============================================================
+   LOCATE TARGET
+   ============================================================ */
 
 function locateTarget() {
 
-    if (!viewer) {
+    if (
+        !window.terraTarget
+    ) {
+
         return;
+
     }
 
-    const target =
-        window.terraTarget ||
-        DEFAULT_LOCATION;
 
+    flyToLocation(
 
-    enterExploreMode();
+        window.terraTarget.lat,
 
+        window.terraTarget.lon,
 
-    viewer.camera.flyTo({
+        250000
 
-        destination:
-            Cesium.Cartesian3.fromDegrees(
-                target.lon,
-                target.lat,
-                250000
-            ),
+    );
 
-        orientation: {
-
-            heading: 0,
-
-            pitch:
-                Cesium.Math.toRadians(-65),
-
-            roll: 0
-
-        },
-
-        duration: 1.8
-
-    });
 }
 
 
-// ============================================================
-// CAMERA TELEMETRY
-// ============================================================
+/* ============================================================
+   TELEMETRY
+   ============================================================ */
 
 function updateCameraTelemetry() {
 
     if (!viewer) {
+
         return;
+
     }
 
 
     const camera =
         viewer.camera;
 
+
     const cartographic =
         camera.positionCartographic;
 
+
     if (!cartographic) {
+
         return;
+
     }
 
 
@@ -875,33 +1171,17 @@ function updateCameraTelemetry() {
             cartographic.latitude
         );
 
+
     const longitude =
         Cesium.Math.toDegrees(
             cartographic.longitude
         );
 
+
     const altitude =
         Math.max(
             0,
             cartographic.height
-        );
-
-
-    const earthRadius =
-        Cesium.Ellipsoid.WGS84.maximumRadius;
-
-
-    const distanceFromCenter =
-        Cesium.Cartesian3.magnitude(
-            camera.positionWC
-        );
-
-
-    const groundDistance =
-        Math.max(
-            0,
-            distanceFromCenter -
-            earthRadius
         );
 
 
@@ -919,93 +1199,312 @@ function updateCameraTelemetry() {
         );
 
 
-    updateText(
+    const distance =
+        Math.max(
+            0,
+            Cesium.Cartesian3.magnitude(
+                camera.positionWC
+            ) -
+            Cesium.Ellipsoid.WGS84.maximumRadius
+        );
+
+
+    setText(
         "telemetryLat",
-        formatLatitude(latitude)
+        formatCoordinate(
+            latitude,
+            "N",
+            "S"
+        )
     );
 
-    updateText(
+
+    setText(
         "telemetryLon",
-        formatLongitude(longitude)
+        formatCoordinate(
+            longitude,
+            "E",
+            "W"
+        )
     );
 
-    updateText(
+
+    setText(
         "telemetryAlt",
-        formatDistance(altitude)
+        formatDistance(
+            altitude
+        )
     );
 
-    updateText(
+
+    setText(
         "telemetryDistance",
-        formatDistance(groundDistance)
+        formatDistance(
+            distance
+        )
     );
 
-    updateText(
+
+    setText(
         "telemetryHeading",
         `${heading.toFixed(1)}°`
     );
 
-    updateText(
+
+    setText(
         "telemetryPitch",
         `${pitch.toFixed(1)}°`
     );
 
-    updateText(
+
+    setText(
+        "bottomLatLon",
+        `${formatCoordinate(latitude,"N","S")} ${formatCoordinate(longitude,"E","W")}`
+    );
+
+
+    setText(
         "alt",
-        formatDistance(altitude)
+        formatDistance(
+            altitude
+        )
     );
 
-    updateText(
+
+    setText(
         "bottomDistance",
-        formatDistance(groundDistance)
+        formatDistance(
+            distance
+        )
     );
 
-
-    if (exploreMode) {
-
-        updateText(
-            "bottomLatLon",
-            `${formatLatitude(latitude)} ${formatLongitude(longitude)}`
-        );
-
-    }
 }
 
 
-// ============================================================
-// HELPERS
-// ============================================================
+/* ============================================================
+   CAPTURE CURRENT CESIUM VIEW
+   ============================================================ */
 
-function updateText(
+function captureCurrentView() {
+
+    if (!viewer) {
+
+        return null;
+
+    }
+
+
+    /*
+     * Render first so the canvas contains
+     * the latest frame.
+     */
+
+    viewer.render();
+
+
+    const canvas =
+        viewer.scene.canvas;
+
+
+    const dataUrl =
+        canvas.toDataURL(
+            "image/png"
+        );
+
+
+    /*
+     * Find the ground point under
+     * the center of the screen.
+     */
+
+    const center =
+        new Cesium.Cartesian2(
+
+            canvas.clientWidth / 2,
+
+            canvas.clientHeight / 2
+
+        );
+
+
+    let ground =
+        null;
+
+
+    const ray =
+        viewer.camera.getPickRay(
+            center
+        );
+
+
+    if (ray) {
+
+        ground =
+            viewer.scene.globe.pick(
+                ray,
+                viewer.scene
+            );
+
+    }
+
+
+    let latitude =
+        null;
+
+
+    let longitude =
+        null;
+
+
+    if (
+        Cesium.defined(
+            ground
+        )
+    ) {
+
+        const cartographic =
+            Cesium.Cartographic.fromCartesian(
+                ground
+            );
+
+
+        latitude =
+            Cesium.Math.toDegrees(
+                cartographic.latitude
+            );
+
+
+        longitude =
+            Cesium.Math.toDegrees(
+                cartographic.longitude
+            );
+
+    }
+
+
+    const cartographic =
+        viewer.camera.positionCartographic;
+
+
+    const altitude =
+        cartographic
+            ? Math.max(
+                0,
+                cartographic.height
+            )
+            : 0;
+
+
+    const distance =
+        Math.max(
+            0,
+            Cesium.Cartesian3.magnitude(
+                viewer.camera.positionWC
+            ) -
+            Cesium.Ellipsoid.WGS84.maximumRadius
+        );
+
+
+    const heading =
+        Cesium.Math.toDegrees(
+            Cesium.Math.zeroToTwoPi(
+                viewer.camera.heading
+            )
+        );
+
+
+    const pitch =
+        Cesium.Math.toDegrees(
+            viewer.camera.pitch
+        );
+
+
+    return {
+
+        dataUrl,
+
+        width:
+            canvas.width,
+
+        height:
+            canvas.height,
+
+        latitude,
+
+        longitude,
+
+        altitude,
+
+        distance,
+
+        heading,
+
+        pitch,
+
+        timestamp:
+            new Date().toISOString()
+
+    };
+
+}
+
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+
+function setText(
     id,
     value
 ) {
 
     const element =
-        document.getElementById(id);
+        document.getElementById(
+            id
+        );
+
 
     if (element) {
-        element.textContent = value;
+
+        element.textContent =
+            value;
+
     }
+
 }
 
 
-function formatLatitude(
-    latitude
+function formatCoordinate(
+    value,
+    positive,
+    negative
 ) {
 
-    return `${Math.abs(latitude).toFixed(4)}° ${
-        latitude >= 0 ? "N" : "S"
-    }`;
-}
+    if (
+        !Number.isFinite(
+            value
+        )
+    ) {
+
+        return "—";
+
+    }
 
 
-function formatLongitude(
-    longitude
-) {
+    return (
 
-    return `${Math.abs(longitude).toFixed(4)}° ${
-        longitude >= 0 ? "E" : "W"
-    }`;
+        Math.abs(value).toFixed(4) +
+
+        "° " +
+
+        (
+            value >= 0
+                ? positive
+                : negative
+        )
+
+    );
+
 }
 
 
@@ -1013,46 +1512,68 @@ function formatDistance(
     meters
 ) {
 
-    if (!Number.isFinite(meters)) {
-        return "--";
-    }
+    if (
+        !Number.isFinite(
+            meters
+        )
+    ) {
 
-    if (meters >= 1000000) {
-
-        return `${
-            (meters / 1000000).toFixed(2)
-        } Mm`;
+        return "—";
 
     }
 
-    if (meters >= 1000) {
 
-        return `${
-            (meters / 1000).toFixed(1)
-        } km`;
+    if (
+        meters >= 1000000
+    ) {
+
+        return (
+            (meters / 1000000)
+                .toFixed(2) +
+            " Mm"
+        );
 
     }
 
-    return `${meters.toFixed(0)} m`;
+
+    if (
+        meters >= 1000
+    ) {
+
+        return (
+            (meters / 1000)
+                .toFixed(1) +
+            " km"
+        );
+
+    }
+
+
+    return (
+        Math.round(meters) +
+        " m"
+    );
+
 }
 
 
 function setExploreState(
-    text
+    value
 ) {
 
-    updateText(
+    setText(
         "exploreState",
-        text
+        value
     );
+
 }
 
 
-// ============================================================
-// START
-// ============================================================
+/* ============================================================
+   START
+   ============================================================ */
 
-document.addEventListener(
-    "DOMContentLoaded",
+window.addEventListener(
+    "load",
     initializeGlobe
 );

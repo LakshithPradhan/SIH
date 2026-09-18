@@ -2,384 +2,1035 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>TerraGlobe — GeoSR Inference Dock</title>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>TerraGlobe — GeoAI Earth Intelligence</title>
 
     <!-- Cesium -->
-    <link href="https://cesium.com/downloads/cesiumjs/releases/1.134/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link
+        rel="stylesheet"
+        href="https://cesium.com/downloads/cesiumjs/releases/1.134/Build/Cesium/Widgets/widgets.css"
+    >
+
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.134/Build/Cesium/Cesium.js"></script>
 
     <!-- Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet">
 
-    <link rel="stylesheet" href="css/style.css">
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <!-- TerraGlobe CSS -->
+    <link
+        rel="stylesheet"
+        href="css/style.css"
+    >
+
 </head>
 
-<body>
 
-    <!-- Real 3D globe -->
+<body class="cinematic-mode">
+
+    <!-- =====================================================
+         CESIUM EARTH
+         ===================================================== -->
+
     <div id="cesiumContainer"></div>
 
     <div class="vignette"></div>
 
-    <!-- Top navigation -->
+
+    <!-- =====================================================
+         TOP NAVIGATION
+         ===================================================== -->
+
     <header class="topbar">
 
-        <div class="brand">
-            <div class="brand-icon">◎</div>
+        <!-- BRAND -->
 
-            <div>
+        <div class="brand">
+
+            <div class="brand-icon">
+                ◎
+            </div>
+
+            <div class="brand-copy">
+
                 <div class="brand-name">
+
                     TerraGlobe
-                    <span>SIH 2026</span>
+
+                    <span>
+                        SIH 2026
+                    </span>
+
                 </div>
 
                 <small>
                     Copernicus Sentinel-2 · GeoAI Pipeline
                 </small>
+
             </div>
+
         </div>
 
-        <nav>
-            <button id="navExplore">
-                Explore<br>3D
+
+        <!-- NAVIGATION -->
+
+        <nav class="main-nav">
+
+            <button
+                id="navExplore"
+                class="nav-button"
+                type="button"
+            >
+                <strong>
+                    Explore 3D
+                </strong>
+
+                <small>
+                    Interactive Earth
+                </small>
             </button>
 
-            <button id="navSR" class="active">
-                SR<br>Pipeline
+
+            <button
+                id="navAnalyze"
+                class="nav-button analyze-nav"
+                type="button"
+            >
+
+                <span class="analyze-icon">
+                    ✦
+                </span>
+
+                <span>
+
+                    <strong>
+                        Analyze Scene
+                    </strong>
+
+                    <small>
+                        Upload & Enhance
+                    </small>
+
+                </span>
+
             </button>
 
-            <button>User<br>Data</button>
-            <button>Constellations</button>
-            <button>Docs</button>
+
+            <button
+                class="nav-button disabled-nav"
+                type="button"
+                title="Coming soon"
+            >
+                <strong>
+                    User Data
+                </strong>
+
+                <small>
+                    Coming Soon
+                </small>
+            </button>
+
+
+            <button
+                class="nav-button disabled-nav"
+                type="button"
+                title="Coming soon"
+            >
+                <strong>
+                    Constellations
+                </strong>
+
+                <small>
+                    Coming Soon
+                </small>
+            </button>
+
+
+            <button
+                class="nav-button disabled-nav"
+                type="button"
+                title="Coming soon"
+            >
+                <strong>
+                    Docs
+                </strong>
+
+                <small>
+                    Documentation
+                </small>
+            </button>
+
         </nav>
 
-        <div class="actions">
 
-            <label class="search">
-                ⌕
-                <input id="search" placeholder="Search location" autocomplete="off">
+        <!-- RIGHT ACTIONS -->
+
+        <div class="top-actions">
+
+            <label class="search-box">
+
+                <span>
+                    ⌕
+                </span>
+
+                <input
+                    id="search"
+                    type="text"
+                    placeholder="Search location"
+                    autocomplete="off"
+                >
+
             </label>
 
-            <button class="lock" id="lock">
-                ◉ Lock<br>Target
+
+            <button
+                id="lock"
+                class="lock-button"
+                type="button"
+            >
+
+                ◉
+
+                <span>
+                    Lock Target
+                </span>
+
             </button>
 
-            <button class="deploy" id="deploy">
-                ⚡ Deploy AI Inference
-            </button>
 
-            <div class="avatar">AS</div>
-
-            <div class="scientist">
-                <b>Dr. A. Sharma</b>
-                <small>Lead EO Scientist</small>
+            <div class="user-avatar">
+                AS
             </div>
 
         </div>
+
     </header>
 
 
-    <!-- GeoSR dock -->
-    <aside class="dock glass">
+    <!-- =====================================================
+         ANALYZE SCENE WORKSPACE
+         ===================================================== -->
 
-        <div class="dockhead">
+    <section
+        id="analysisWorkspace"
+        class="analysis-workspace"
+        aria-hidden="true"
+    >
 
-            <div class="dockicon">⊞</div>
+        <div class="analysis-shell">
 
-            <div>
-                <h2>GeoSR™ Inference Dock</h2>
-                <p>Diffusion Model v4.2 · ESA Level-2A</p>
-            </div>
+            <!-- HEADER -->
 
-            <div class="status">
-                ● ACTIVE<br>TILE
-            </div>
-
-        </div>
-
-        <hr>
-
-        <div class="compare">
-            <span>
-                RAW 10m <b>(Sentinel-2)</b>
-            </span>
-
-            <strong>
-                1.25m AI SuperRes
-            </strong>
-        </div>
-
-        <div class="preview">
-
-            <img src="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/8/115/172"
-                alt="Satellite preview">
-
-            <i></i>
-
-            <label>10m / Multi-Spectral</label>
-            <label>1.25m 8x</label>
-
-        </div>
-
-        <div class="row">
-            <span>Target Ground Resolution</span>
-            <b>
-                1.25m <em>(Sub-meter Est.)</em>
-            </b>
-        </div>
-
-        <div class="res">
-            <button>10m</button>
-            <button>5.0m</button>
-            <button>2.5m</button>
-            <button class="selected">1.25m</button>
-        </div>
-
-        <label class="field">
-            Super-Resolution Foundation Model
-        </label>
-
-        <select>
-            <option>
-                GeoSR Diffusion v4 (Trained on Sentinel-2 + NAIP)
-            </option>
-            <option>Swin2SR Baseline</option>
-            <option>ESRGAN Benchmark</option>
-        </select>
-
-        <div class="metricsbox">
-
-            <div class="metricstitle">
-                REAL-TIME VALIDATION METRICS
-            </div>
-
-            <div class="metrics">
+            <div class="analysis-header">
 
                 <div>
-                    <small>SSIM Index</small>
-                    <b>● 0.941</b>
+
+                    <span class="eyebrow">
+                        TERRAGLOBE · GEOAI
+                    </span>
+
+                    <h1>
+                        Super-Resolution Analysis
+                    </h1>
+
+                    <p>
+                        Upload satellite imagery or an image
+                        and send it directly to the AI
+                        super-resolution pipeline.
+                    </p>
+
                 </div>
 
-                <div>
-                    <small>PSNR Value</small>
-                    <b>● 38.4 dB</b>
+
+                <button
+                    id="closeWorkspace"
+                    class="close-button"
+                    type="button"
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+            <!-- MAIN ANALYSIS GRID -->
+
+            <div class="analysis-grid">
+
+                <!-- UPLOAD -->
+
+                <div class="upload-card">
+
+                    <div
+                        id="dropzone"
+                        class="dropzone"
+                    >
+
+                        <input
+                            id="sceneFile"
+                            type="file"
+                            accept=".tif,.tiff,.jp2,.png,.jpg,.jpeg,.zip,image/*"
+                            hidden
+                        >
+
+
+                        <div class="upload-icon">
+                            ↑
+                        </div>
+
+
+                        <h2>
+                            Upload Satellite Scene
+                        </h2>
+
+
+                        <p>
+                            Drag and drop your imagery here
+                        </p>
+
+
+                        <span>
+                            GeoTIFF · TIFF · JP2 · PNG · JPG · ZIP
+                        </span>
+
+
+                        <button
+                            id="chooseFile"
+                            class="choose-file"
+                            type="button"
+                        >
+                            Choose File
+                        </button>
+
+
+                        <small id="fileStatus">
+                            No file selected
+                        </small>
+
+                    </div>
+
+
+                    <!-- SELECTED FILE -->
+
+                    <div
+                        id="fileSummary"
+                        class="file-summary"
+                        hidden
+                    >
+
+                        <div>
+
+                            <strong id="fileName">
+                                —
+                            </strong>
+
+                            <span id="fileMeta">
+                                —
+                            </span>
+
+                        </div>
+
+
+                        <button
+                            id="removeFile"
+                            type="button"
+                        >
+                            Remove
+                        </button>
+
+                    </div>
+
                 </div>
 
-                <div>
-                    <small>Confidence</small>
-                    <b>● 96.8%</b>
+
+                <!-- METADATA -->
+
+                <div class="metadata-card">
+
+                    <span class="eyebrow">
+                        SCENE METADATA
+                    </span>
+
+
+                    <div class="metadata-grid">
+
+                        <div>
+                            <span>
+                                SENSOR
+                            </span>
+
+                            <strong id="metaSensor">
+                                —
+                            </strong>
+                        </div>
+
+
+                        <div>
+                            <span>
+                                INPUT RESOLUTION
+                            </span>
+
+                            <strong id="metaResolution">
+                                —
+                            </strong>
+                        </div>
+
+
+                        <div>
+                            <span>
+                                PROCESSING LEVEL
+                            </span>
+
+                            <strong id="metaLevel">
+                                —
+                            </strong>
+                        </div>
+
+
+                        <div>
+                            <span>
+                                CLOUD COVER
+                            </span>
+
+                            <strong id="metaCloud">
+                                —
+                            </strong>
+                        </div>
+
+
+                        <div>
+                            <span>
+                                LATITUDE
+                            </span>
+
+                            <strong id="metaLat">
+                                —
+                            </strong>
+                        </div>
+
+
+                        <div>
+                            <span>
+                                LONGITUDE
+                            </span>
+
+                            <strong id="metaLon">
+                                —
+                            </strong>
+                        </div>
+
+                    </div>
+
+
+                    <button
+                        id="runAnalysis"
+                        class="run-analysis"
+                        type="button"
+                        disabled
+                    >
+                        ✦ Run AI Super-Resolution
+                    </button>
+
                 </div>
+
+            </div>
+
+
+            <!-- PIPELINE -->
+
+            <div class="pipeline-card">
+
+                <div class="pipeline-heading">
+
+                    <span>
+                        PROCESSING PIPELINE
+                    </span>
+
+                    <strong id="missionPct">
+                        0%
+                    </strong>
+
+                </div>
+
+
+                <div class="pipeline-steps">
+
+                    <span data-step="1">
+                        01 · Upload
+                    </span>
+
+                    <span data-step="2">
+                        02 · Preprocess
+                    </span>
+
+                    <span data-step="3">
+                        03 · PyTorch SR
+                    </span>
+
+                    <span data-step="4">
+                        04 · Validate
+                    </span>
+
+                </div>
+
+
+                <div class="pipeline-track">
+
+                    <i id="missionBar"></i>
+
+                </div>
+
+
+                <p id="missionStage">
+                    Waiting for an input scene.
+                </p>
 
             </div>
 
         </div>
 
-        <button class="inspect" id="inspect">
-            ⌾ Inspect 8x Super-Resolution Area
-        </button>
-
-        <div class="exports">
-            <button id="tiff">⇩ GeoTIFF (32-bit)</button>
-            <button id="geojson">▱ GeoJSON Mask</button>
-        </div>
-
-        <div class="progress" id="progress">
-
-            <div>
-                <span>AI inference</span>
-                <b id="pct">0%</b>
-            </div>
-
-            <i>
-                <em id="bar"></em>
-            </i>
-
-        </div>
-
-    </aside>
+    </section>
 
 
+    <!-- =====================================================
+         EXPLORE CONTROLS
+         These are hidden automatically on landing.
+         ===================================================== -->
 
-
-    <!-- Globe controls -->
     <div class="controls">
 
-        <button id="home" data-tooltip="Home — cinematic rotating Earth">
+        <button
+            id="home"
+            type="button"
+            data-tooltip="Return to cinematic Earth"
+        >
             ⌂
         </button>
 
-        <button id="three" data-tooltip="Explore 3D — interactive Earth">
+
+        <button
+            id="three"
+            type="button"
+            data-tooltip="Interactive 3D Earth"
+        >
             3D
         </button>
 
-        <div>
-            <button id="plus" data-tooltip="Zoom in">
+
+        <div class="zoom-group">
+
+            <button
+                id="plus"
+                type="button"
+                data-tooltip="Zoom in"
+            >
                 +
             </button>
 
-            <button id="minus" data-tooltip="Zoom out">
+            <button
+                id="minus"
+                type="button"
+                data-tooltip="Zoom out"
+            >
                 −
             </button>
+
         </div>
 
-        <button id="reset" data-tooltip="Reset camera">
+
+        <button
+            id="reset"
+            type="button"
+            data-tooltip="Reset camera"
+        >
             ↔
         </button>
 
-        <button id="pin" data-tooltip="Pin Location — click the Earth">
+
+        <button
+            id="pin"
+            type="button"
+            data-tooltip="Pin location"
+        >
             📍
         </button>
 
-        <button id="locate" data-tooltip="Center on active location">
-            ♙
+
+        <button
+            id="capture"
+            type="button"
+            data-tooltip="Capture & Enhance"
+        >
+            ◉
         </button>
 
-        <button id="full" data-tooltip="Toggle fullscreen">
+
+        <button
+            id="locate"
+            type="button"
+            data-tooltip="Locate target"
+        >
+            ⌖
+        </button>
+
+
+        <button
+            id="full"
+            type="button"
+            data-tooltip="Fullscreen"
+        >
             ⛶
         </button>
 
     </div>
 
 
-    <!-- Explore telemetry -->
-    <div class="explore-panel glass" id="explorePanel">
+    <!-- =====================================================
+         RIGHT-SIDE TELEMETRY
+         ===================================================== -->
 
-        <div class="explore-title">
-            <span class="live-dot"></span>
-            PLANETARY TELEMETRY
-            <small id="exploreState">CINEMATIC</small>
+    <section
+        id="explorePanel"
+        class="explore-panel"
+    >
+
+        <div class="explore-panel-header">
+
+            <div>
+
+                <span class="live-indicator"></span>
+
+                PLANETARY TELEMETRY
+
+            </div>
+
+
+            <small id="exploreState">
+                CINEMATIC EARTH
+            </small>
+
         </div>
+
 
         <div class="telemetry-grid">
 
             <div>
-                <span>LATITUDE</span>
-                <b id="telemetryLat">--</b>
+                <span>
+                    LATITUDE
+                </span>
+
+                <strong id="telemetryLat">
+                    --
+                </strong>
             </div>
 
-            <div>
-                <span>LONGITUDE</span>
-                <b id="telemetryLon">--</b>
-            </div>
 
             <div>
-                <span>EYE ALTITUDE</span>
-                <b id="telemetryAlt">--</b>
+                <span>
+                    LONGITUDE
+                </span>
+
+                <strong id="telemetryLon">
+                    --
+                </strong>
             </div>
 
-            <div>
-                <span>GROUND DISTANCE</span>
-                <b id="telemetryDistance">--</b>
-            </div>
 
             <div>
-                <span>HEADING</span>
-                <b id="telemetryHeading">--</b>
+                <span>
+                    EYE ALTITUDE
+                </span>
+
+                <strong id="telemetryAlt">
+                    --
+                </strong>
             </div>
 
+
             <div>
-                <span>PITCH</span>
-                <b id="telemetryPitch">--</b>
+                <span>
+                    DISTANCE
+                </span>
+
+                <strong id="telemetryDistance">
+                    --
+                </strong>
+            </div>
+
+
+            <div>
+                <span>
+                    HEADING
+                </span>
+
+                <strong id="telemetryHeading">
+                    --
+                </strong>
+            </div>
+
+
+            <div>
+                <span>
+                    PITCH
+                </span>
+
+                <strong id="telemetryPitch">
+                    --
+                </strong>
             </div>
 
         </div>
 
-        <div class="coordinate-system">
+
+        <div class="coordinate-footer">
             WGS 84 · LIVE CAMERA TELEMETRY
         </div>
 
+    </section>
+
+
+    <!-- =====================================================
+         CAPTURE & ENHANCE MODAL
+         ===================================================== -->
+
+    <section
+        id="captureModal"
+        class="capture-modal"
+        aria-hidden="true"
+    >
+
+        <div class="capture-backdrop"></div>
+
+
+        <div class="capture-card">
+
+            <div class="capture-header">
+
+                <div>
+
+                    <span class="eyebrow">
+                        TERRAGLOBE · LIVE SCENE
+                    </span>
+
+                    <h2>
+                        Capture & Enhance
+                    </h2>
+
+                    <p>
+                        Capture the current Earth view and
+                        send it directly to the AI pipeline.
+                    </p>
+
+                </div>
+
+
+                <button
+                    id="closeCapture"
+                    class="capture-close"
+                    type="button"
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+            <div class="capture-grid">
+
+                <!-- IMAGE -->
+
+                <div class="capture-preview">
+
+                    <img
+                        id="capturePreview"
+                        alt="Captured Earth scene"
+                    >
+
+                    <div class="preview-label">
+                        LIVE CESIUM VIEW · CAPTURED SCENE
+                    </div>
+
+                </div>
+
+
+                <!-- INFORMATION -->
+
+                <div class="capture-information">
+
+                    <div
+                        id="captureStatus"
+                        class="capture-status"
+                    >
+                        Ready to capture.
+                    </div>
+
+
+                    <div class="capture-metadata">
+
+                        <div>
+                            <span>
+                                LATITUDE
+                            </span>
+
+                            <strong id="captureLat">
+                                —
+                            </strong>
+                        </div>
+
+
+                        <div>
+                            <span>
+                                LONGITUDE
+                            </span>
+
+                            <strong id="captureLon">
+                                —
+                            </strong>
+                        </div>
+
+
+                        <div>
+                            <span>
+                                ALTITUDE
+                            </span>
+
+                            <strong id="captureAlt">
+                                —
+                            </strong>
+                        </div>
+
+
+                        <div>
+                            <span>
+                                DISTANCE
+                            </span>
+
+                            <strong id="captureDistance">
+                                —
+                            </strong>
+                        </div>
+
+
+                        <div>
+                            <span>
+                                HEADING
+                            </span>
+
+                            <strong id="captureHeading">
+                                —
+                            </strong>
+                        </div>
+
+
+                        <div>
+                            <span>
+                                PITCH
+                            </span>
+
+                            <strong id="capturePitch">
+                                —
+                            </strong>
+                        </div>
+
+                    </div>
+
+
+                    <div class="capture-actions">
+
+                        <button
+                            id="retakeCapture"
+                            class="capture-secondary"
+                            type="button"
+                        >
+                            ↻ Retake
+                        </button>
+
+
+                        <button
+                            id="enhanceCapture"
+                            class="capture-primary"
+                            type="button"
+                        >
+                            ✦ Enhance with AI
+                        </button>
+
+                    </div>
+
+
+                    <p class="capture-note">
+                        The browser captures the current
+                        Cesium view directly. The image and
+                        geospatial metadata are sent to the
+                        FastAPI/PyTorch endpoint.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div
+                id="captureResult"
+                class="capture-result"
+                hidden
+            >
+
+                <span>
+                    AI SUPER-RESOLUTION
+                </span>
+
+                <p id="captureResultMessage">
+                    Processing...
+                </p>
+
+                <img
+                    id="enhancedResultImage"
+                    alt="AI enhanced result"
+                    hidden
+                >
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         BOTTOM INFORMATION
+         ===================================================== -->
+
+    <div class="bottom-source">
+
+        <span class="source-dot"></span>
+
+        <strong>
+            Copernicus Sentinel-2 MSI
+        </strong>
+
+        <span>
+            ·
+        </span>
+
+        <span>
+            GeoAI Earth Intelligence
+        </span>
+
     </div>
 
 
-    <!-- Bottom telemetry -->
-    <div class="telemetry t1">
-        ●
-        <b>Copernicus Sentinel-2 MSI</b>
-        |
-        Pass:
-        <b>22 OCT 2026</b>
-        |
-        Cloud:
-        <b>0.1%</b>
-        |
-        <span>L2A Bottom-Of-Atmosphere</span>
-    </div>
+    <div
+        id="bottomTelemetry"
+        class="bottom-telemetry"
+    >
 
-    <div class="telemetry t2" id="bottomTelemetry">
         LAT/LON:
-        <b id="bottomLatLon">28.6139° N 77.2090° E</b>
-        |
-        ELEV:
-        <b id="groundElevation">216m MSL</b>
-        |
-        EYE ALT:
-        <b id="alt">--</b>
-        |
+
+        <strong id="bottomLatLon">
+            28.6139° N 77.2090° E
+        </strong>
+
+        <span>·</span>
+
+        ALT:
+
+        <strong id="alt">
+            --
+        </strong>
+
+        <span>·</span>
+
         DIST:
-        <b id="bottomDistance">--</b>
+
+        <strong id="bottomDistance">
+            --
+        </strong>
+
     </div>
 
-    <div class="scale" id="scaleBar">
+
+    <div
+        id="scaleBar"
+        class="scale-bar"
+    >
         ━━ 50 km
-        ESA · NASA · SIH AI
     </div>
 
 
-    <!-- Inspection modal -->
-    <div class="modal hidden" id="modal">
+    <!-- =====================================================
+         OLD INSPECTOR MODAL
+         Kept available for future validation work.
+         ===================================================== -->
 
-        <div class="modalcard glass">
+    <div
+        id="modal"
+        class="modal hidden"
+    >
 
-            <button id="close">×</button>
+        <div class="modal-card">
 
-            <small>
-                GEOSR INSPECTOR · ACTIVE LOCATION
-            </small>
+            <button
+                id="close"
+                class="modal-close"
+                type="button"
+            >
+                ×
+            </button>
+
+
+            <span class="eyebrow">
+                GEOSR INSPECTOR
+            </span>
+
 
             <h2>
-                8× Super-Resolution Analysis
+                Super-Resolution Analysis
             </h2>
 
-            <div class="before">
+
+            <div class="comparison">
 
                 <div>
-                    <label>10m SENTINEL-2 INPUT</label>
 
-                    <img src="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/10/461/691"
-                        alt="Sentinel input">
+                    <span>
+                        INPUT
+                    </span>
+
+                    <div class="comparison-placeholder">
+                        Sentinel-2
+                    </div>
+
                 </div>
+
 
                 <div>
-                    <label>1.25m AI ENHANCED ESTIMATE</label>
 
-                    <img src="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/11/922/1382"
-                        alt="AI enhanced estimate">
+                    <span>
+                        AI ENHANCED
+                    </span>
+
+                    <div class="comparison-placeholder">
+                        PyTorch SR
+                    </div>
+
                 </div>
-
-            </div>
-
-            <div class="warning">
-
-                <b>⚠ AI-reconstructed detail</b>
-
-                Fine-scale structures are model-inferred and are not
-                directly observed by Sentinel-2. Validate against
-                high-resolution reference data before scientific use.
-
-            </div>
-
-            <div class="modalmetrics">
-
-                <b>SSIM<br>0.941</b>
-                <b>PSNR<br>38.4 dB</b>
-                <b>RMSE<br>0.021</b>
-                <b>Confidence<br>96.8%</b>
 
             </div>
 
@@ -388,7 +1039,12 @@
     </div>
 
 
+    <!-- =====================================================
+         JAVASCRIPT
+         ===================================================== -->
+
     <script src="js/globe.js"></script>
+
     <script src="js/main.js"></script>
 
 </body>
