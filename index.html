@@ -10,7 +10,7 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>TerraGlobe — GeoAI Earth Intelligence</title>
+    <title>Satellite vision </title>
 
     <!-- Cesium -->
     <link
@@ -30,7 +30,12 @@
     >
 
     <link
-        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <link
+        href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&f[]=general-sans@400,500,600,700&display=swap"
         rel="stylesheet"
     >
 
@@ -72,12 +77,9 @@
 
                 <div class="brand-name">
 
-                    TerraGlobe
+                   Satellite vision 
 
-                    <span>
-                        SIH 2026
-                    </span>
-
+                    
                 </div>
 
                 <small>
@@ -222,6 +224,76 @@
         </div>
 
     </header>
+
+
+    <!-- =====================================================
+         LANDING HERO (cinematic mode only)
+         ===================================================== -->
+
+    <section class="landing-hero" id="landingHero">
+
+       
+
+        <h1 class="hero-title">
+            Medium-resolution Earth,<br>
+            <em>super-resolved.</em>
+        </h1>
+
+        <p class="hero-sub">
+            Satellite Vision turns 10m Sentinel-2 imagery into validated,
+            AI super-resolved output down to <strong>&lt;4m</strong> —
+            with uncertainty-aware confidence mapping, not just sharper pixels.
+        </p>
+
+        <div class="hero-cta-row">
+
+            <button
+                class="hero-cta-primary"
+                id="heroExplore"
+                type="button"
+            >
+                ⦿ Explore Earth in 3D
+            </button>
+
+            <button
+                class="hero-cta-secondary"
+                id="heroAnalyze"
+                type="button"
+            >
+                ✦ Analyze a Scene →
+            </button>
+
+        </div>
+
+        <div class="hero-stats">
+
+            <div>
+                <b data-target="4" data-prefix="&lt;" data-suffix="m">&lt;0m</b>
+                <span>Target resolution</span>
+            </div>
+
+            <div>
+                <b data-target="0.941" data-decimals="3">0.000</b>
+                <span>SSIM index</span>
+            </div>
+
+            <div>
+                <b data-target="4">0</b>
+                <span>Validation metrics</span>
+            </div>
+
+            <div>
+                <b data-target="10" data-suffix="m">0m</b>
+                <span>Sentinel-2 input</span>
+            </div>
+
+        </div>
+
+        <div class="hero-hint">
+            Drag to explore is disabled here — click Explore to enter interactive mode
+        </div>
+
+    </section>
 
 
     <!-- =====================================================

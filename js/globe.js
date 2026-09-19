@@ -902,7 +902,7 @@ function placePinFromScreenPosition(
                         12,
 
                     color:
-                        Cesium.Color.CYAN,
+                        Cesium.Color.fromCssColorString("#5FC98A"),
 
                     outlineColor:
                         Cesium.Color.WHITE,
@@ -923,7 +923,7 @@ function placePinFromScreenPosition(
                         `${latitude.toFixed(4)}°, ${longitude.toFixed(4)}°`,
 
                     font:
-                        "11px Space Grotesk",
+                        "11px 'General Sans'",
 
                     fillColor:
                         Cesium.Color.WHITE,

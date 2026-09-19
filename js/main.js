@@ -162,6 +162,98 @@ $("#navAnalyze")?.addEventListener(
 
 
 /* ============================================================
+   LANDING HERO
+   ============================================================ */
+
+$("#heroExplore")?.addEventListener(
+    "click",
+    function () {
+
+        setExploreMode();
+
+    }
+);
+
+
+$("#heroAnalyze")?.addEventListener(
+    "click",
+    function () {
+
+        openAnalysisWorkspace();
+
+    }
+);
+
+
+function animateHeroStats() {
+
+    document
+        .querySelectorAll(
+            ".hero-stats b[data-target]"
+        )
+        .forEach(function (el) {
+
+            const target =
+                parseFloat(
+                    el.dataset.target
+                );
+
+            const decimals =
+                parseInt(
+                    el.dataset.decimals || "0",
+                    10
+                );
+
+            const prefix =
+                el.dataset.prefix || "";
+
+            const suffix =
+                el.dataset.suffix || "";
+
+            const start =
+                performance.now();
+
+            function step(now) {
+
+                const t =
+                    Math.min(
+                        (now - start) / 1100,
+                        1
+                    );
+
+                el.textContent =
+                    prefix +
+                    (target * t).toFixed(decimals) +
+                    suffix;
+
+                if (t < 1) {
+                    requestAnimationFrame(step);
+                }
+
+            }
+
+            requestAnimationFrame(step);
+
+        });
+
+}
+
+
+if (
+    document.body.classList.contains(
+        "cinematic-mode"
+    )
+) {
+
+    setTimeout(
+        animateHeroStats,
+        400
+    );
+
+}
+
+
+/* ============================================================
    ANALYSIS WORKSPACE
    ============================================================ */
 
